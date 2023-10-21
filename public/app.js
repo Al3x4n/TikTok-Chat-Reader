@@ -1,7 +1,8 @@
 // This will use the demo backend if you open index.html locally via file://, otherwise your server will be used
 let backendUrl = location.protocol === 'file:' ? "https://tiktok-chat-reader.zerody.one/" : undefined;
 let connection = new TikTokIOConnection(backendUrl);
-
+// import { errorlog as errorLog } from '../logger';
+// import { successlog } from '../logger';
 // Counter
 let viewerCount = 0;
 let likeCount = 0;
@@ -59,6 +60,18 @@ function sanitize(text) {
     return text.replace(/</g, '&lt;')
 }
 
+function addDatetime(text) {
+    var currentdate = new Date(); 
+    var datetime = "(" + currentdate.getDate() + "/"
+                + (currentdate.getMonth()+1)  + "/" 
+                + currentdate.getFullYear() + " @ "  
+                + currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds() + ") ";
+    text = datetime + text;
+    return text
+}
+
 function updateRoomStats() {
     $('#roomStats').html(`Viewers: <b>${viewerCount.toLocaleString()}</b> Likes: <b>${likeCount.toLocaleString()}</b> Earned Diamonds: <b>${diamondsCount.toLocaleString()}</b>`)
 }
@@ -81,14 +94,44 @@ function addChatItem(color, data, text, summarize) {
         container.find('div').slice(0, 200).remove();
     }
 
-    container.find('.temporary').remove();;
+    container.find('.temporary').remove();
 
     container.append(`
         <div class=${summarize ? 'temporary' : 'static'}>
             <img class="miniprofilepicture" src="${data.profilePictureUrl}">
             <span>
                 <b>${generateUsernameLink(data)}:</b> 
-                <span style="color:${color}">${sanitize(text)}</span>
+                <span style="color:${color}">${addDatetime(sanitize(text))}</span>
+            </span>
+        </div>
+    `);
+
+    container.stop();
+    container.animate({
+        scrollTop: container[0].scrollHeight
+    }, 400);
+    // if(/^([0-9]{1,2,})$/.test(sanitize(text))){
+    //     addOrderItem(color, data, text);
+    // }
+    // successlog.info(`Chat: ${addDatetime(sanitize(text))}`);
+    if(/^([0-9]{2,})$/.test(sanitize(text))){
+        addOrderItem(color, data, text);
+        // errorLog.error(`Order : ${addDatetime(sanitize(text))}`);
+    }
+}
+
+/**
+ * Add a new Order to the gift container
+ */
+function addOrderItem(color, data, text) {
+    let container = location.href.includes('obs.html') ? $('.eventcontainer') : $('.giftcontainer');
+
+    container.append(`
+        <div class='static'}>
+            <img class="miniprofilepicture" src="${data.profilePictureUrl}">
+            <span>
+                <b>${generateUsernameLink(data)}:</b> 
+                <span style="color:${color}">${addDatetime(sanitize(text))}</span>
             </span>
         </div>
     `);
