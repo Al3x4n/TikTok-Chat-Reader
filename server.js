@@ -1,11 +1,19 @@
 require('dotenv').config();
 
+const Promise = require('bluebird')  
+const AppDAO = require('./dao')  
+const SessionTTKRepository = require('./sessionttk_repository')  
+const ClientTTKRepository = require('./clientttk_repository')
+
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { TikTokConnectionWrapper, getGlobalConnectionCount } = require('./connectionWrapper');
 const { clientBlocked } = require('./limiter');
-
+const dao = new AppDAO('./database.sqlite3')
+// const blogSessionData = { name: 'xxxxxxxxxxxxxxxxxxx' }
+const sessionTTKRepo = new SessionTTKRepository(dao)
+const clientTTKRepo = new ClientTTKRepository(dao)
 const app = express();
 const httpServer = createServer(app);
 
@@ -74,6 +82,7 @@ io.on('connection', (socket) => {
         tiktokConnectionWrapper.connection.on('emote', msg => socket.emit('emote', msg));
         tiktokConnectionWrapper.connection.on('envelope', msg => socket.emit('envelope', msg));
         tiktokConnectionWrapper.connection.on('subscribe', msg => socket.emit('subscribe', msg));
+        // initDB()
     });
 
     socket.on('disconnect', () => {
@@ -82,12 +91,64 @@ io.on('connection', (socket) => {
         }
     });
 });
-
+initDB()
 // Emit global connection statistics
 setInterval(() => {
     io.emit('statistic', { globalConnectionCount: getGlobalConnectionCount() });
 }, 5000)
+function initDB() {  
+    
+    let sessionttkId
 
+    sessionTTKRepo.createTable()
+    .then(() => clientTTKRepo.createTable())
+    .then(() => sessionTTKRepo.create("hehe"))
+    .then((data) => {
+        sessionttkId = data.id
+      const clientttks = [
+        {
+          name: 'Outline',
+          description: 'High level overview of sections',
+          isComplete: 1,
+          sessionttkId
+        },
+        {
+          name: 'Write',
+          description: 'Write article contents and code examples',
+          isComplete: 0,
+          sessionttkId
+        }
+      ]
+      return Promise.all(clientttks.map((clientttk) => {
+        const { name, description, isComplete, sessionttkId } = clientttk
+        return clientTTKRepo.create(name, description, isComplete, sessionttkId)
+      }))
+    })
+    .then(() => sessionTTKRepo.getById(sessionttkId))
+    .then((sessionttk) => {
+      console.log(`\nRetreived sessionttk from database`)
+      console.log(`sessionttk id = ${sessionttk.id}`)
+      console.log(`sessionttk name = ${sessionttk.name}`)
+      return sessionTTKRepo.getClientInSession(sessionttk.id)
+    })
+    .then((clientttks) => {
+      console.log('\nRetrieved sessionttk clientttk from database')
+      return new Promise((resolve, reject) => {
+        clientttks.forEach((clientttk) => {
+          console.log(`clientttk id = ${clientttk.id}`)
+          console.log(`clientttk name = ${clientttk.name}`)
+          console.log(`clientttk description = ${clientttk.description}`)
+          console.log(`clientttk isComplete = ${clientttk.isComplete}`)
+          console.log(`clientttk sessionttkId = ${clientttk.sessionttkId}`)
+        })
+      })
+      resolve('success')
+    })
+    .catch((err) => {
+      console.log('Error: ')
+      console.log(JSON.stringify(err))
+    })
+  }
 // Serve frontend files
 app.use(express.static('public'));
 

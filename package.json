@@ -1,9 +1,20 @@
 {
   "dependencies": {
+    "bluebird": "^3.7.2",
     "dotenv": "^16.0.0",
     "express": "^4.17.2",
     "socket.io": "^4.4.1",
+    "sqlite3": "^5.1.6",
     "tiktok-live-connector": "^1.0.0",
     "winston": "^3.11.0"
-  }
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "tiktok-chat-reader",
+  "description": "A chat reader for <a href=\"https://www.tiktok.com/live\">TikTok LIVE</a> utilizing <a href=\"https://github.com/zerodytrash/TikTok-Live-Connector\">TikTok-Live-Connector</a> and <a href=\"https://socket.io/\">Socket.IO</a> to forward the data to the client. This demo project uses the unofficial TikTok API to retrieve chat comments, gifts and other events from TikTok LIVE.",
+  "version": "1.0.0",
+  "main": "connectionWrapper.js",
+  "author": "",
+  "license": "ISC"
 }
