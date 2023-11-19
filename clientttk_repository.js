@@ -10,6 +10,7 @@ class ClientTTKRepository {
           name TEXT,
           description TEXT,
           isComplete INTEGER DEFAULT 0,
+          datetime_at TEXT,
           sessionttkId INTEGER,
           CONSTRAINT clientttk_fk_sessionttkId FOREIGN KEY (sessionttkId)
             REFERENCES sessionttks(id) ON UPDATE CASCADE ON DELETE CASCADE)`
@@ -17,8 +18,8 @@ class ClientTTKRepository {
     }
     create(name, description, isComplete, sessionttkId) {
         return this.dao.runquery(
-          `INSERT INTO clientttks (name, description, isComplete, sessionttkId)
-            VALUES (?, ?, ?, ?)`,
+          `INSERT INTO clientttks (name, description, isComplete, sessionttkId, datetime_at)
+            VALUES (?, ?, ?, ?,datetime('now','localtime'))`,
           [name, description, isComplete, sessionttkId])
       }
       update(clientttk) {

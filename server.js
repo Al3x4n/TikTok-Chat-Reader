@@ -27,7 +27,7 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
     let tiktokConnectionWrapper;
-
+    let currentSessionId;
     console.info('New connection from origin', socket.handshake.headers['origin'] || socket.handshake.headers['referer']);
 
     socket.on('setUniqueId', (uniqueId, options) => {
@@ -62,19 +62,50 @@ io.on('connection', (socket) => {
         }
 
         // Redirect wrapper control events once
-        tiktokConnectionWrapper.once('connected', state => socket.emit('tiktokConnected', state));
-        tiktokConnectionWrapper.once('disconnected', reason => socket.emit('tiktokDisconnected', reason));
+        tiktokConnectionWrapper.once('connected', state => {
+            socket.emit('tiktokConnected', state)
+            console.log(`tiktokConnectionWrapper state = connected`)
+            console.log(`tiktokConnectionWrapper roomId = ${state.roomId} username = ${uniqueId}`)
+            sessionTTKRepo.create(uniqueId).then((data)=> {
+                console.log(`created sessionid = ${data.id} for username = ${uniqueId}`)
+                currentSessionId = data.id
+            })
+            
+        });
+        tiktokConnectionWrapper.once('disconnected', reason => {
+            socket.emit('tiktokDisconnected', reason)
+            sessionTTKRepo.updateEndSession(currentSessionId)
+            console.log(`updateEndSession sessionid = ${currentSessionId} for username = ${uniqueId}`)
+        });
 
         // Notify client when stream ends
-        tiktokConnectionWrapper.connection.on('streamEnd', () => socket.emit('streamEnd'));
+        tiktokConnectionWrapper.connection.on('streamEnd', () => {
+            socket.emit('streamEnd')
+            sessionTTKRepo.updateEndSession(currentSessionId)});
+            console.log(`updateEndSession sessionid = ${currentSessionId} for username = ${uniqueId}`)
 
         // Redirect message events
         tiktokConnectionWrapper.connection.on('roomUser', msg => socket.emit('roomUser', msg));
-        tiktokConnectionWrapper.connection.on('member', msg => socket.emit('member', msg));
-        tiktokConnectionWrapper.connection.on('chat', msg => socket.emit('chat', msg));
+        tiktokConnectionWrapper.connection.on('member', msg => {
+            socket.emit('member', msg)
+            clientTTKRepo.create(msg.uniqueId, "joined", false, currentSessionId).then((data)=> {
+                console.log(`insert clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+            })            
+        });
+        tiktokConnectionWrapper.connection.on('chat', msg => {
+            socket.emit('chat', msg)
+            clientTTKRepo.create(msg.uniqueId, msg.comment, true, currentSessionId).then((data)=> {
+                console.log(`insert comment clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+            }) 
+        });
         tiktokConnectionWrapper.connection.on('gift', msg => socket.emit('gift', msg));
         tiktokConnectionWrapper.connection.on('social', msg => socket.emit('social', msg));
-        tiktokConnectionWrapper.connection.on('like', msg => socket.emit('like', msg));
+        tiktokConnectionWrapper.connection.on('like', msg => {
+            socket.emit('like', msg)
+            clientTTKRepo.create(msg.uniqueId, "like", true, currentSessionId).then((data)=> {
+                console.log(`insert like clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+            }) 
+        });
         tiktokConnectionWrapper.connection.on('questionNew', msg => socket.emit('questionNew', msg));
         tiktokConnectionWrapper.connection.on('linkMicBattle', msg => socket.emit('linkMicBattle', msg));
         tiktokConnectionWrapper.connection.on('linkMicArmies', msg => socket.emit('linkMicArmies', msg));
@@ -91,11 +122,40 @@ io.on('connection', (socket) => {
         }
     });
 });
-initDB()
+// initDB()
+checkDB()
 // Emit global connection statistics
 setInterval(() => {
     io.emit('statistic', { globalConnectionCount: getGlobalConnectionCount() });
 }, 5000)
+function checkDB(){
+    sessionTTKRepo.createTable()
+    .then(() => clientTTKRepo.createTable())
+    .then(() => sessionTTKRepo.getAll()).then((sessionttks) => {
+        sessionttks.forEach((sessionttk) => {
+            console.log(`\nRetreived sessionttk from database`)
+            console.log(`sessionttk id = ${sessionttk.id}`)
+            console.log(`sessionttk name = ${sessionttk.name}`)
+            console.log(`sessionttk datetime_start = ${sessionttk.datetime_start}`)
+            console.log(`sessionttk datetime_end = ${sessionttk.datetime_end}`)
+            sessionTTKRepo.getClientInSession(sessionttk.id).then((clientttks) => {
+                // console.log('\nRetrieved sessionttk clientttk from database')
+                return new Promise((resolve, reject) => {
+                  clientttks.forEach((clientttk) => {
+                    if(clientttk.description != "joined"){
+                        // console.log(`clientttk id = ${clientttk.id}`)
+                        console.log(`clientttk name = ${clientttk.name}`)
+                        console.log(`clientttk description = ${clientttk.description}`)
+                        // console.log(`clientttk isComplete = ${clientttk.isComplete}`)
+                        // console.log(`clientttk sessionttkId = ${clientttk.sessionttkId}`)
+                    }
+                  })
+                })
+                resolve('success')
+              })
+          })
+      })
+}
 function initDB() {  
     
     let sessionttkId
@@ -129,6 +189,8 @@ function initDB() {
       console.log(`\nRetreived sessionttk from database`)
       console.log(`sessionttk id = ${sessionttk.id}`)
       console.log(`sessionttk name = ${sessionttk.name}`)
+      console.log(`sessionttk datetime_start = ${sessionttk.datetime_start}`)
+      console.log(`sessionttk datetime_end = ${sessionttk.datetime_end}`)
       return sessionTTKRepo.getClientInSession(sessionttk.id)
     })
     .then((clientttks) => {

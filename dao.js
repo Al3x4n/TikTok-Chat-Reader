@@ -19,6 +19,7 @@ class AppDAO {
           console.log(err)
           reject(err)
         } else {   //Trường hợp chạy query thành công
+            console.log('runquery  lastID = ' + this.lastID)
           resolve({ id: this.lastID })   //Trả về kết quả là một object có id lấy từ DB.
         }
       })

@@ -7,13 +7,21 @@ class SessionTTKRepository {
       const sql = `
       CREATE TABLE IF NOT EXISTS sessionttks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT)`
+        name TEXT,
+        datetime_start TEXT,
+        datetime_end TEXT)`
       return this.dao.runquery(sql)
     }
     create(name) {
         return this.dao.runquery(
-          'INSERT INTO sessionttks (name) VALUES (?)',
+          `INSERT INTO sessionttks (name,datetime_start) VALUES (?,datetime('now','localtime'))`,
           [name])
+      }
+      updateEndSession(id) {
+        return this.dao.runquery(
+          `UPDATE sessionttks SET datetime_end = datetime('now','localtime') WHERE id = ?`,
+          [id]
+        )
       }
       update(sessionttk) {
         const { id, name } = sessionttk
