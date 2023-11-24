@@ -53,7 +53,7 @@ a {
     text-align: center;
 }
 
-.chatcontainer, .giftcontainer, .eventcontainer {
+.chatcontainer, .giftcontainer, .dealcontainer, .eventcontainer {
     overflow-y: scroll;
     height: calc(100vh - 240px);
     word-wrap: break-word;
@@ -71,7 +71,9 @@ a {
 .giftcontainer {
     min-width: 400px;
 }
-
+.dealcontainer {
+    min-width: 400px;
+}
 .miniprofilepicture {
     height: 20px;
     width: 20px;

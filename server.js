@@ -89,13 +89,13 @@ io.on('connection', (socket) => {
         tiktokConnectionWrapper.connection.on('member', msg => {
             socket.emit('member', msg)
             clientTTKRepo.create(msg.uniqueId, "joined", false, currentSessionId).then((data)=> {
-                console.log(`insert clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+                // console.log(`insert clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
             })            
         });
         tiktokConnectionWrapper.connection.on('chat', msg => {
             socket.emit('chat', msg)
             clientTTKRepo.create(msg.uniqueId, msg.comment, true, currentSessionId).then((data)=> {
-                console.log(`insert comment clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+                // console.log(`insert comment clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
             }) 
         });
         tiktokConnectionWrapper.connection.on('gift', msg => socket.emit('gift', msg));
@@ -103,7 +103,7 @@ io.on('connection', (socket) => {
         tiktokConnectionWrapper.connection.on('like', msg => {
             socket.emit('like', msg)
             clientTTKRepo.create(msg.uniqueId, "like", true, currentSessionId).then((data)=> {
-                console.log(`insert like clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
+                // console.log(`insert like clientTTKid = ${data.id} for ttkusername = ${msg.uniqueId}`)
             }) 
         });
         tiktokConnectionWrapper.connection.on('questionNew', msg => socket.emit('questionNew', msg));

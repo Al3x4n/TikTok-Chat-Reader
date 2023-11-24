@@ -116,6 +116,7 @@ function addChatItem(color, data, text, summarize) {
     // successlog.info(`Chat: ${addDatetime(sanitize(text))}`);
     if(/^([0-9]{2,})$/.test(sanitize(text))){
         addOrderItem(color, data, text);
+        addDealItem(color, data, text);
         // errorLog.error(`Order : ${addDatetime(sanitize(text))}`);
     }
 }
@@ -125,6 +126,31 @@ function addChatItem(color, data, text, summarize) {
  */
 function addOrderItem(color, data, text) {
     let container = location.href.includes('obs.html') ? $('.eventcontainer') : $('.giftcontainer');
+
+    container.append(`
+        <div class='static'}>
+            <img class="miniprofilepicture" src="${data.profilePictureUrl}">
+            <span>
+                <b>${generateUsernameLink(data)}:</b> 
+                <span style="color:${color}">${addDatetime(sanitize(text))}</span>
+                <input type="button" value="Click me" style="background-color:white" onclick="msg()">
+                <script>
+                function msg() {
+                    "this.style.background='green'"
+                    alert("Hello world!");
+                }
+                </script>
+            </span>
+        </div>
+    `);
+
+    container.stop();
+    container.animate({
+        scrollTop: container[0].scrollHeight
+    }, 400);
+}
+function addDealItem(color, data, text) {
+    let container = location.href.includes('obs.html') ? $('.eventcontainer') : $('.dealcontainer');
 
     container.append(`
         <div class='static'}>
